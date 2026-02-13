@@ -12,7 +12,12 @@ import reviewRoutes from "./routes/reviewRoutes.js";
 dotenv.config();
 
 const app = e();
-app.use(cors());
+app.use(cors({
+  origin:[
+    "http://localhost:5173"
+  ],
+  credentials:true
+}));
 connectDB();
 app.use(e.json());
 
