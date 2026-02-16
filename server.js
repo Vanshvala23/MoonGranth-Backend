@@ -13,11 +13,12 @@ dotenv.config();
 
 const app = e();
 app.use(cors({
-  origin:[
-    "http://localhost:5173"
-  ],
-  credentials:true
+  origin:true,
+  credentials:true,
+  methods: ["GET","POST","PUT","DELETE"],
+  allowedHeaders: ["Content-Type","Authorization"]
 }));
+app.options('*',cors());
 connectDB();
 app.use(e.json());
 
