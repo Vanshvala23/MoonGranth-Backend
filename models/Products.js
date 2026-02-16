@@ -18,7 +18,15 @@ const productSchema = new mongoose.Schema({
 
   description: String,
 
-  image: String,
+  images: {
+    type: [String],  // Array of strings
+    default: []
+  },
+
+  stock: {  // Added stock field (useful for your frontend)
+    type: Number,
+    default: 0
+  },
 
   isNew: {
     type: Boolean,
