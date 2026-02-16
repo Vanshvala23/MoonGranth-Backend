@@ -13,11 +13,14 @@ dotenv.config();
 
 const app = e();
 app.use(cors({
-  origin:true,
-  credentials:true,
-  methods: ["GET","POST","PUT","DELETE"],
+  origin: [
+    "https://moon-granth-web.vercel.app"
+  ],
+  credentials: true,
+  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
   allowedHeaders: ["Content-Type","Authorization"]
 }));
+
 app.options('*',cors());
 connectDB();
 app.use(e.json());
