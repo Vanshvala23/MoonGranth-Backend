@@ -21,7 +21,7 @@ app.use(cors({
   origin: (origin, callback) => {
     const allowedOrigins = [
       "https://moon-granth-web.vercel.app",
-      "https://moolgranth.com/",
+      "https://moolgranth.com",
       "http://localhost:5173",
       "http://localhost:3000",
     ];
