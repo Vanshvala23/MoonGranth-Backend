@@ -15,10 +15,7 @@ export const getProducts = async (req, res) => {
 export const getProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-
-    if (!product)
-      return res.status(404).json({ message: "Product not found" });
-
+    if (!product) return res.status(404).json({ message: "Product not found" });
     res.json(product);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -28,16 +25,26 @@ export const getProduct = async (req, res) => {
 /* CREATE PRODUCT */
 export const addProduct = async (req, res) => {
   try {
-    const { name, category, price, description, stock, isNew } = req.body;
+    const { name, category, price, description, stock, isNew, images } = req.body;
 
     if (!name || !category || !price)
       return res.status(400).json({ message: "Required fields missing" });
 
-    // req.files is populated by upload.array("images") in the route
-    const imageUrls = req.files?.map((file) => file.path) || [];
+    // Support both: file upload (multipart) OR raw JSON images array
+    let imageUrls = [];
+    if (req.files && req.files.length > 0) {
+      imageUrls = req.files.map((file) => file.path);  // Cloudinary URLs from upload
+    } else if (images) {
+      imageUrls = Array.isArray(images) ? images : [images]; // raw JSON array or single string
+    }
+
+    // Check if product already exists
+    const existingProduct = await Product.findOne({ name: name.trim() });
+    if (existingProduct)
+      return res.status(409).json({ message: `Product "${name}" already exists` });
 
     const product = await Product.create({
-      name,
+      name: name.trim(),
       category,
       price,
       description,
@@ -52,28 +59,31 @@ export const addProduct = async (req, res) => {
   }
 };
 
-/* UPDATE PRODUCT — optionally replace images */
+/* UPDATE PRODUCT */
 export const updateProduct = async (req, res) => {
   try {
-    const { name, category, price, description, stock, isNew } = req.body;
+    const { name, category, price, description, stock, isNew, images } = req.body;
 
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
 
-    // If new images uploaded → delete old ones from Cloudinary, replace with new
+    // Handle images: file upload takes priority, then JSON array, then keep existing
     if (req.files && req.files.length > 0) {
-      // Delete old images from Cloudinary
+      // Delete old images from Cloudinary before replacing
       for (const imageUrl of product.images) {
-        // Extract public_id from URL  e.g. "uploads/abc123"
         const publicId = imageUrl.split("/").slice(-2).join("/").split(".")[0];
         await cloudinary.uploader.destroy(publicId);
       }
       product.images = req.files.map((file) => file.path);
+    } else if (images) {
+      // Raw JSON images array provided (e.g. from Postman raw JSON)
+      product.images = Array.isArray(images) ? images : [images];
     }
+    // else: no images provided → keep existing ones
 
-    if (name)                        product.name        = name;
-    if (category)                    product.category    = category;
-    if (price)                       product.price       = price;
+    if (name !== undefined)          product.name        = name.trim();
+    if (category !== undefined)      product.category    = category;
+    if (price !== undefined)         product.price       = price;
     if (description !== undefined)   product.description = description;
     if (stock !== undefined)         product.stock       = stock;
     if (isNew !== undefined)         product.isNew       = isNew;
@@ -85,13 +95,12 @@ export const updateProduct = async (req, res) => {
   }
 };
 
-/* DELETE PRODUCT — also removes images from Cloudinary */
+/* DELETE PRODUCT */
 export const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
 
-    // Delete all associated images from Cloudinary
     for (const imageUrl of product.images) {
       const publicId = imageUrl.split("/").slice(-2).join("/").split(".")[0];
       await cloudinary.uploader.destroy(publicId);

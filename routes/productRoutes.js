@@ -19,6 +19,7 @@ router
   .route("/:id")
   .get(getProduct)
   .put(upload.array("images", 5), updateProduct)  // optional new images on update
+  .patch(upload.array("images", 5), updateProduct) // support PATCH as well
   .delete(deleteProduct);
 
 export default router;
